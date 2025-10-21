@@ -155,3 +155,6 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Dataset original (raw data)
+dataset_original/

@@ -119,7 +119,7 @@ def build_model(num_classes):
     )
     
     print("✅ Modelo construido y compilado exitosamente")
-    return model
+    return model, base_model
 
 if __name__ == "__main__":
     print("🌻 INICIANDO ENTRENAMIENTO DEL MODELO DE CLASIFICACIÓN DE FLORES")
@@ -127,13 +127,14 @@ if __name__ == "__main__":
     
     # Parámetros de entrenamiento
     EPOCHS = 15
+    FINE_TUNE_EPOCHS = 10
     
     # Cargar datos
     train_ds, val_ds, test_ds, class_names = load_data()
     
     # Construir modelo
     num_classes = len(class_names)
-    model = build_model(num_classes)
+    model, base_model = build_model(num_classes)
     
     # Mostrar resumen del modelo
     print("\n📋 RESUMEN DEL MODELO:")
@@ -148,6 +149,34 @@ if __name__ == "__main__":
         train_ds,
         validation_data=val_ds,
         epochs=EPOCHS,
+        verbose=1
+    )
+    
+    # Fine-tuning
+    print("\n--- Iniciando Fine-Tuning ---")
+    
+    # Descongelar el modelo base
+    base_model.trainable = True
+    
+    # Congelar la mayoría de las capas (excepto las últimas 30)
+    for layer in base_model.layers[:-30]:
+        layer.trainable = False
+    
+    # Re-compilar el modelo con learning rate muy bajo
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5),
+        loss='sparse_categorical_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    # Entrenar de nuevo con fine-tuning
+    print(f"\n🔧 INICIANDO FINE-TUNING ({FINE_TUNE_EPOCHS} épocas)...")
+    print("-" * 50)
+    
+    fine_tune_history = model.fit(
+        train_ds,
+        validation_data=val_ds,
+        epochs=FINE_TUNE_EPOCHS,
         verbose=1
     )
     
